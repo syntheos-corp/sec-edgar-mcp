@@ -1,4 +1,5 @@
 import argparse
+import os
 from mcp.server.fastmcp import FastMCP
 from sec_edgar_mcp.tools import CompanyTools, FilingsTools, FinancialTools, InsiderTools
 
@@ -495,11 +496,47 @@ def get_recommended_tools(form_type: str):
 def main():
     """Main entry point for the MCP server."""
     parser = argparse.ArgumentParser(description="SEC EDGAR MCP Server - Access SEC filings and financial data")
-    parser.add_argument("--transport", default="stdio", help="Transport method")
+    parser.add_argument("--transport", default=None, help="Transport method (stdio or streamable-http)")
+    parser.add_argument("--port", type=int, default=None, help="Port for HTTP transport")
     args = parser.parse_args()
 
-    # Run the MCP server
-    mcp.run(transport=args.transport)
+    # Determine transport from environment or arguments
+    transport = args.transport or os.environ.get("MCP_TRANSPORT", "stdio")
+    
+    # Configure based on transport type
+    if transport == "streamable-http":
+        # For HTTP transport, use PORT env var (required by Render and other cloud platforms)
+        port = args.port or int(os.environ.get("PORT", 8000))
+        print(f"Starting SEC EDGAR MCP server with HTTP transport on port {port}")
+        
+        # Run with HTTP transport
+        import uvicorn
+        from starlette.applications import Starlette
+        from starlette.responses import JSONResponse
+        from starlette.routing import Route, Mount
+        
+        # Create health check endpoint
+        async def health(request):
+            return JSONResponse({
+                "status": "healthy",
+                "service": "SEC EDGAR MCP Server",
+                "transport": "streamable-http",
+                "version": "1.0.0-alpha"
+            })
+        
+        # Create Starlette app with MCP mounted and health check
+        app = Starlette(
+            routes=[
+                Route("/health", health),
+                Mount("/", mcp.streamable_http_app()),
+            ]
+        )
+        
+        uvicorn.run(app, host="0.0.0.0", port=port)
+    else:
+        # Default to stdio transport for local usage
+        print(f"Starting SEC EDGAR MCP server with stdio transport")
+        mcp.run(transport="stdio")
 
 
 if __name__ == "__main__":

@@ -1,0 +1,15 @@
+# Core dependencies for SEC EDGAR MCP Server
+mcp[cli]>=1.7.1
+edgartools>=4.4.0
+requests>=2.31.0
+uvicorn>=0.23.0
+starlette>=0.27.0
+python-dotenv>=1.0.0
+packaging>=23.0
+
+# Additional dependencies that may be needed by edgartools
+beautifulsoup4>=4.10.0
+lxml>=4.9.0
+pandas>=2.0.0
+pyarrow>=10.0.0
+httpx>=0.24.0
