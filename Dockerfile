@@ -15,33 +15,11 @@ COPY . .
 # Ensure local package is discoverable
 ENV PYTHONPATH=/app
 
-# Default to stdio transport for local usage
-ENV MCP_TRANSPORT=stdio
-
-# For cloud deployments (Render, Heroku, etc.):
-# Set MCP_TRANSPORT=streamable-http
-# The PORT environment variable will be automatically provided by the platform
-
-# Example configurations:
-# 
-# Local MCP client (stdio transport):
-# "mcpServers": {
-#   "sec-edgar-mcp": {
-#     "command": "docker",
-#     "args": [
-#       "run",
-#       "--rm",
-#       "-i",
-#       "-e", "SEC_EDGAR_USER_AGENT=<First Name, Last name (your@email.com)>",
-#       "stefanoamorelli/sec-edgar-mcp:latest"
-#     ]
-#   }
-# }
-#
-# For HTTP deployment on cloud platforms:
-# Set environment variables:
-# - MCP_TRANSPORT=streamable-http
-# - PORT=<provided by platform>
-# - SEC_EDGAR_USER_AGENT=<First Name, Last name (your@email.com)>
+# OpenAI Agents SDK Configuration
+# Server runs with HTTP transport (Streamable HTTP) by default
+# Creates MCP endpoint at /mcp/ for OpenAI compatibility
+# PORT is provided by Render (typically 10000)
+# SEC_EDGAR_USER_AGENT must be set with your information
+# Optional: Set MCP_TRANSPORT=sse to use SSE transport (deprecated)
 
 CMD ["python", "sec_edgar_mcp/server.py"]

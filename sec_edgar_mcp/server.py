@@ -4,8 +4,9 @@ from mcp.server.fastmcp import FastMCP
 from sec_edgar_mcp.tools import CompanyTools, FilingsTools, FinancialTools, InsiderTools
 
 
-# Initialize MCP server
-mcp = FastMCP("SEC EDGAR MCP", dependencies=["edgartools"])
+# Initialize MCP server with stateless HTTP for OpenAI Agents SDK compatibility
+# stateless_http=True is required for OpenAI's MCPServerStreamableHttp to work properly
+mcp = FastMCP("SEC EDGAR MCP", stateless_http=True, dependencies=["edgartools"])
 
 # Add system-wide instructions for deterministic responses
 DETERMINISTIC_INSTRUCTIONS = """
@@ -496,47 +497,27 @@ def get_recommended_tools(form_type: str):
 def main():
     """Main entry point for the MCP server."""
     parser = argparse.ArgumentParser(description="SEC EDGAR MCP Server - Access SEC filings and financial data")
-    parser.add_argument("--transport", default=None, help="Transport method (stdio or streamable-http)")
-    parser.add_argument("--port", type=int, default=None, help="Port for HTTP transport")
+    parser.add_argument("--transport", default="http", help="Transport method (http or sse)")
+    parser.add_argument("--host", default="0.0.0.0", help="Host to bind to")
+    parser.add_argument("--port", type=int, default=None, help="Port for server")
     args = parser.parse_args()
 
-    # Determine transport from environment or arguments
-    transport = args.transport or os.environ.get("MCP_TRANSPORT", "stdio")
+    # Get port from environment or arguments (Render provides PORT env var)
+    port = args.port or int(os.environ.get("PORT", 10000))
     
-    # Configure based on transport type
-    if transport == "streamable-http":
-        # For HTTP transport, use PORT env var (required by Render and other cloud platforms)
-        port = args.port or int(os.environ.get("PORT", 8000))
-        print(f"Starting SEC EDGAR MCP server with HTTP transport on port {port}")
-        
-        # Run with HTTP transport
-        import uvicorn
-        from starlette.applications import Starlette
-        from starlette.responses import JSONResponse
-        from starlette.routing import Route, Mount
-        
-        # Create health check endpoint
-        async def health(request):
-            return JSONResponse({
-                "status": "healthy",
-                "service": "SEC EDGAR MCP Server",
-                "transport": "streamable-http",
-                "version": "1.0.0-alpha"
-            })
-        
-        # Create Starlette app with MCP mounted and health check
-        app = Starlette(
-            routes=[
-                Route("/health", health),
-                Mount("/", mcp.streamable_http_app()),
-            ]
-        )
-        
-        uvicorn.run(app, host="0.0.0.0", port=port)
+    # Use transport from environment variable if set, otherwise use argument
+    transport = os.environ.get("MCP_TRANSPORT", args.transport)
+    
+    if transport == "sse":
+        # SSE transport (deprecated but still supported)
+        print(f"Starting SEC EDGAR MCP server with SSE transport on {args.host}:{port}")
+        print("Note: SSE is deprecated. Consider using HTTP transport for better compatibility.")
+        mcp.run(transport="sse", host=args.host, port=port)
     else:
-        # Default to stdio transport for local usage
-        print(f"Starting SEC EDGAR MCP server with stdio transport")
-        mcp.run(transport="stdio")
+        # HTTP transport (recommended for OpenAI Agents SDK)
+        print(f"Starting SEC EDGAR MCP server with HTTP transport on {args.host}:{port}")
+        print(f"OpenAI Agents SDK endpoint: http://{args.host}:{port}/mcp/")
+        mcp.run(transport="http", host=args.host, port=port)
 
 
 if __name__ == "__main__":

@@ -1,6 +1,6 @@
 # Deploying SEC EDGAR MCP to Render
 
-This guide explains how to deploy the SEC EDGAR MCP server to [Render](https://render.com) as a web service.
+This guide explains how to deploy the SEC EDGAR MCP server to [Render](https://render.com) with full OpenAI compatibility using HTTP transport (Streamable HTTP).
 
 ## Prerequisites
 
@@ -34,9 +34,9 @@ Add the following environment variables in the Render dashboard:
 
 | Variable | Value | Description |
 |----------|-------|-------------|
-| `MCP_TRANSPORT` | `streamable-http` | **Required** - Enables HTTP transport for cloud deployment |
 | `SEC_EDGAR_USER_AGENT` | `Your Name (your@email.com)` | **Required** - SEC requires identification |
-| `PORT` | (auto-set by Render) | Render provides this automatically |
+| `MCP_TRANSPORT` | `http` (default) or `sse` | **Optional** - Transport protocol |
+| `PORT` | (auto-set by Render) | Render provides this automatically (10000) |
 
 ### 4. Deploy
 
@@ -50,26 +50,74 @@ Add the following environment variables in the Render dashboard:
 After deployment, your service will be accessible via HTTP. You can verify it's running by:
 
 1. The Render dashboard shows "Live" status
-2. The logs show: `Uvicorn running on http://0.0.0.0:<PORT>`
-3. Visit the health check endpoint: `https://your-service-name.onrender.com/health`
-   - Should return: `{"status": "healthy", "service": "SEC EDGAR MCP Server", "transport": "streamable-http", "version": "1.0.0-alpha"}`
-4. The service responds to MCP protocol requests at the root path
+2. The logs show: `Starting SEC EDGAR MCP server with HTTP transport on 0.0.0.0:10000`
+3. The logs show: `OpenAI Agents SDK endpoint: http://0.0.0.0:10000/mcp/`
+4. The MCP endpoint is available at: `https://your-service-name.onrender.com/mcp/`
 
 ## Using the Deployed Service
 
-### With MCP Clients
+### Method 1: OpenAI Agents SDK (Recommended)
 
-Configure your MCP client to connect via HTTP:
+The server uses HTTP transport (Streamable HTTP) for optimal compatibility:
 
-```json
-{
-  "mcpServers": {
-    "sec-edgar-mcp": {
-      "url": "https://your-service-name.onrender.com",
-      "transport": "streamable-http"
+```python
+from openai_agents import Agent, MCPServerStreamableHttp
+
+# Connect to your deployed server
+# IMPORTANT: Include /mcp/ in the URL
+server = MCPServerStreamableHttp(
+    params={
+        "url": "https://your-service-name.onrender.com/mcp/"
     }
-  }
-}
+)
+
+# Create an agent with the MCP server
+agent = Agent(
+    name="SEC EDGAR Agent",
+    model="gpt-4",
+    mcp_servers=[server]
+)
+
+# The agent now has access to all SEC EDGAR tools
+response = await agent.run("Get the latest 10-K filing for NVDA")
+```
+
+### Method 2: OpenAI Responses API
+
+You can also use the MCP server directly with OpenAI's Responses API:
+
+```python
+from openai import OpenAI
+
+client = OpenAI()
+
+response = client.responses.create(
+    model="gpt-4",
+    tools=[
+        {
+            "type": "mcp",
+            "server_label": "sec_edgar",
+            "server_url": "https://your-service-name.onrender.com/mcp/",
+            "require_approval": "never"
+        }
+    ],
+    input="What were NVIDIA's revenues in the latest 10-K?"
+)
+```
+
+### Using SSE Transport (Alternative)
+
+If you prefer SSE transport, set `MCP_TRANSPORT=sse` in Render environment variables:
+
+```python
+from openai_agents import Agent, MCPServerSse
+
+# With SSE, no /mcp/ path is needed
+server = MCPServerSse(
+    params={
+        "url": "https://your-service-name.onrender.com"
+    }
+)
 ```
 
 ### Security Considerations
@@ -86,9 +134,16 @@ For production use, consider:
 ### Service Exits Immediately
 
 If the service exits with "Application exited early":
-- Verify `MCP_TRANSPORT=streamable-http` is set in environment variables
 - Check that `SEC_EDGAR_USER_AGENT` is properly formatted
+- Ensure you're using the correct endpoint URL (include `/mcp/` for HTTP transport)
 - Review the logs for any error messages
+
+### Connection Issues
+
+If OpenAI can't connect to your server:
+- For HTTP transport: Ensure you're using the `/mcp/` endpoint
+- For SSE transport: Use the root URL without `/mcp/`
+- Verify the service is "Live" in Render dashboard
 
 ### Connection Refused
 
@@ -123,12 +178,19 @@ Render automatically redeploys when you push changes to the connected GitHub bra
 
 If Render doesn't meet your needs, the same configuration works with:
 
-- **Heroku**: Set `MCP_TRANSPORT=streamable-http` and deploy with Docker
-- **Google Cloud Run**: Deploy as a containerized service
-- **AWS App Runner**: Deploy with automatic scaling
+- **Heroku**: Deploy with Docker and set `SEC_EDGAR_USER_AGENT`
+- **Google Cloud Run**: Deploy as a containerized service with HTTP transport
+- **AWS App Runner**: Deploy with automatic scaling and stateless HTTP
 - **Azure Container Apps**: Deploy with built-in load balancing
 
-Each platform will provide a `PORT` environment variable that the server will use automatically.
+Each platform will provide a `PORT` environment variable that the server uses automatically.
+
+## Important Notes
+
+1. **Endpoint URL**: When using HTTP transport (default), always include `/mcp/` in your URL
+2. **Stateless HTTP**: The server uses `stateless_http=True` for OpenAI compatibility
+3. **Transport Selection**: HTTP transport is recommended for better scalability and compatibility
+4. **Authentication**: Consider adding authentication headers for production deployments
 
 ## Support
 

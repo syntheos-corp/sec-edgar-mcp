@@ -1,6 +1,6 @@
 # Render Blueprint for SEC EDGAR MCP Server
-# This file automates deployment configuration on Render
-# To use: Connect your GitHub repo and Render will detect this file
+# OpenAI Agents SDK Compatible - HTTP Transport (Streamable HTTP)
+# MCP endpoint available at: https://your-service.onrender.com/mcp/
 
 services:
   - type: web
@@ -8,13 +8,12 @@ services:
     runtime: docker
     repo: https://github.com/syntheos-corp/sec-edgar-mcp # Update with your repo
     branch: main
-    healthCheckPath: /health
     envVars:
-      - key: MCP_TRANSPORT
-        value: streamable-http
       - key: SEC_EDGAR_USER_AGENT
         value: "Your Name (your@email.com)" # REQUIRED: Update with your information
-      # PORT is automatically provided by Render
+      # - key: MCP_TRANSPORT
+      #   value: "sse" # Uncomment to use SSE transport (deprecated)
+      # PORT is automatically provided by Render (10000)
     
     # Free tier configuration
     plan: free
