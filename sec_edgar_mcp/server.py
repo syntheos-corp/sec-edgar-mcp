@@ -1,12 +1,11 @@
 import argparse
 import os
-from mcp.server.fastmcp import FastMCP
+from fastmcp import FastMCP
 from sec_edgar_mcp.tools import CompanyTools, FilingsTools, FinancialTools, InsiderTools
 
 
-# Initialize MCP server with stateless HTTP for OpenAI Agents SDK compatibility
-# stateless_http=True is required for OpenAI's MCPServerStreamableHttp to work properly
-mcp = FastMCP("SEC EDGAR MCP", stateless_http=True, dependencies=["edgartools"])
+# Initialize MCP server for OpenAI Agents SDK compatibility
+mcp = FastMCP("SEC EDGAR MCP", dependencies=["edgartools"])
 
 # Add system-wide instructions for deterministic responses
 DETERMINISTIC_INSTRUCTIONS = """
@@ -505,12 +504,16 @@ def main():
     port = args.port or int(os.environ.get("PORT", 10000))
     
     # HTTP transport (Streamable HTTP) for OpenAI Agents SDK
-    # Note: HTTP transport doesn't accept host parameter in run(), use settings instead
-    mcp.settings.host = args.host
-    mcp.settings.port = port
+    # Use global settings as recommended by FastMCP 2.x
+    import fastmcp
+    fastmcp.settings.host = args.host
+    fastmcp.settings.port = port
+    
     print(f"Starting SEC EDGAR MCP server with HTTP transport on {args.host}:{port}")
     print(f"OpenAI Agents SDK endpoint: http://{args.host}:{port}/mcp/")
-    mcp.run(transport="http")
+    
+    # stateless_http=True is required for OpenAI's MCPServerStreamableHttp
+    mcp.run(transport="http", stateless_http=True)
 
 
 if __name__ == "__main__":
