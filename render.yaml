@@ -11,8 +11,6 @@ services:
     envVars:
       - key: SEC_EDGAR_USER_AGENT
         value: "Your Name (your@email.com)" # REQUIRED: Update with your information
-      # - key: MCP_TRANSPORT
-      #   value: "sse" # Uncomment to use SSE transport (deprecated)
       # PORT is automatically provided by Render (10000)
     
     # Free tier configuration

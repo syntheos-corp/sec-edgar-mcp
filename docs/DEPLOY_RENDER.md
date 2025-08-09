@@ -35,7 +35,6 @@ Add the following environment variables in the Render dashboard:
 | Variable | Value | Description |
 |----------|-------|-------------|
 | `SEC_EDGAR_USER_AGENT` | `Your Name (your@email.com)` | **Required** - SEC requires identification |
-| `MCP_TRANSPORT` | `http` (default) or `sse` | **Optional** - Transport protocol |
 | `PORT` | (auto-set by Render) | Render provides this automatically (10000) |
 
 ### 4. Deploy
@@ -105,20 +104,6 @@ response = client.responses.create(
 )
 ```
 
-### Using SSE Transport (Alternative)
-
-If you prefer SSE transport, set `MCP_TRANSPORT=sse` in Render environment variables:
-
-```python
-from openai_agents import Agent, MCPServerSse
-
-# With SSE, no /mcp/ path is needed
-server = MCPServerSse(
-    params={
-        "url": "https://your-service-name.onrender.com"
-    }
-)
-```
 
 ### Security Considerations
 
@@ -141,9 +126,9 @@ If the service exits with "Application exited early":
 ### Connection Issues
 
 If OpenAI can't connect to your server:
-- For HTTP transport: Ensure you're using the `/mcp/` endpoint
-- For SSE transport: Use the root URL without `/mcp/`
+- Ensure you're using the `/mcp/` endpoint (not the root URL)
 - Verify the service is "Live" in Render dashboard
+- Check that the URL includes the full path: `https://your-service-name.onrender.com/mcp/`
 
 ### Connection Refused
 
@@ -187,9 +172,9 @@ Each platform will provide a `PORT` environment variable that the server uses au
 
 ## Important Notes
 
-1. **Endpoint URL**: When using HTTP transport (default), always include `/mcp/` in your URL
+1. **Endpoint URL**: Always include `/mcp/` in your URL: `https://your-service-name.onrender.com/mcp/`
 2. **Stateless HTTP**: The server uses `stateless_http=True` for OpenAI compatibility
-3. **Transport Selection**: HTTP transport is recommended for better scalability and compatibility
+3. **HTTP Transport**: The server uses Streamable HTTP transport exclusively
 4. **Authentication**: Consider adding authentication headers for production deployments
 
 ## Support

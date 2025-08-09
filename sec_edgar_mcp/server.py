@@ -497,7 +497,6 @@ def get_recommended_tools(form_type: str):
 def main():
     """Main entry point for the MCP server."""
     parser = argparse.ArgumentParser(description="SEC EDGAR MCP Server - Access SEC filings and financial data")
-    parser.add_argument("--transport", default="http", help="Transport method (http or sse)")
     parser.add_argument("--host", default="0.0.0.0", help="Host to bind to")
     parser.add_argument("--port", type=int, default=None, help="Port for server")
     args = parser.parse_args()
@@ -505,19 +504,13 @@ def main():
     # Get port from environment or arguments (Render provides PORT env var)
     port = args.port or int(os.environ.get("PORT", 10000))
     
-    # Use transport from environment variable if set, otherwise use argument
-    transport = os.environ.get("MCP_TRANSPORT", args.transport)
-    
-    if transport == "sse":
-        # SSE transport (deprecated but still supported)
-        print(f"Starting SEC EDGAR MCP server with SSE transport on {args.host}:{port}")
-        print("Note: SSE is deprecated. Consider using HTTP transport for better compatibility.")
-        mcp.run(transport="sse", host=args.host, port=port)
-    else:
-        # HTTP transport (recommended for OpenAI Agents SDK)
-        print(f"Starting SEC EDGAR MCP server with HTTP transport on {args.host}:{port}")
-        print(f"OpenAI Agents SDK endpoint: http://{args.host}:{port}/mcp/")
-        mcp.run(transport="http", host=args.host, port=port)
+    # HTTP transport (Streamable HTTP) for OpenAI Agents SDK
+    # Note: HTTP transport doesn't accept host parameter in run(), use settings instead
+    mcp.settings.host = args.host
+    mcp.settings.port = port
+    print(f"Starting SEC EDGAR MCP server with HTTP transport on {args.host}:{port}")
+    print(f"OpenAI Agents SDK endpoint: http://{args.host}:{port}/mcp/")
+    mcp.run(transport="http")
 
 
 if __name__ == "__main__":

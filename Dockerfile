@@ -16,10 +16,9 @@ COPY . .
 ENV PYTHONPATH=/app
 
 # OpenAI Agents SDK Configuration
-# Server runs with HTTP transport (Streamable HTTP) by default
+# Server runs with HTTP transport (Streamable HTTP)
 # Creates MCP endpoint at /mcp/ for OpenAI compatibility
 # PORT is provided by Render (typically 10000)
 # SEC_EDGAR_USER_AGENT must be set with your information
-# Optional: Set MCP_TRANSPORT=sse to use SSE transport (deprecated)
 
 CMD ["python", "sec_edgar_mcp/server.py"]
