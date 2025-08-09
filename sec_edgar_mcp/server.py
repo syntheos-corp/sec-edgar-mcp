@@ -503,17 +503,17 @@ def main():
     # Get port from environment or arguments (Render provides PORT env var)
     port = args.port or int(os.environ.get("PORT", 10000))
     
-    # HTTP transport (Streamable HTTP) for OpenAI Agents SDK
-    # Use global settings as recommended by FastMCP 2.x
-    import fastmcp
-    fastmcp.settings.host = args.host
-    fastmcp.settings.port = port
-    
     print(f"Starting SEC EDGAR MCP server with HTTP transport on {args.host}:{port}")
     print(f"OpenAI Agents SDK endpoint: http://{args.host}:{port}/mcp/")
     
+    # Pass host and port directly to run() method for proper binding
     # stateless_http=True is required for OpenAI's MCPServerStreamableHttp
-    mcp.run(transport="http", stateless_http=True)
+    mcp.run(
+        transport="http",
+        host=args.host,
+        port=port,
+        stateless_http=True
+    )
 
 
 if __name__ == "__main__":
