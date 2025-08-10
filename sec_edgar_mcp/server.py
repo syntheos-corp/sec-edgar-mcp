@@ -2,6 +2,7 @@ import argparse
 import os
 from fastmcp import FastMCP
 from sec_edgar_mcp.tools import CompanyTools, FilingsTools, FinancialTools, InsiderTools
+from sec_edgar_mcp.tools.deep_research import deep_research_tools
 
 
 # Initialize MCP server for OpenAI Agents SDK compatibility
@@ -423,6 +424,55 @@ def analyze_insider_sentiment(identifier: str, months: int = 6):
 
 
 # Utility Tools
+# Deep Research Tools for OpenAI Compatibility
+@mcp.tool("search")
+def search(query: str, data_types: list = None, top_k: int = 10, date_range_days: int = 90):
+    """
+    Search through SEC EDGAR data for relevant information.
+    
+    This tool is optimized for OpenAI Deep Research to explore SEC filings,
+    companies, and financial data. It returns top-k results with object IDs
+    that can be used with the fetch tool for detailed retrieval.
+    
+    Args:
+        query: Search query string (company name, ticker, filing type, or keywords)
+        data_types: Types to search ["companies", "filings"] (default: all)
+        top_k: Number of top results to return (default: 10, max: 50)
+        date_range_days: Limit filing search to recent N days (default: 90)
+        
+    Returns:
+        Dictionary with top-k search results including object IDs for fetching
+        
+    Example:
+        search("NVDA 10-K", top_k=5)
+        search("Apple Inc", data_types=["companies"])
+    """
+    return deep_research_tools.search(query, data_types, top_k, date_range_days)
+
+
+@mcp.tool("fetch")
+def fetch(object_ids: list, include_content: bool = False):
+    """
+    Fetch detailed information for specific object IDs from search results.
+    
+    This tool retrieves full details for objects found via the search tool,
+    enabling OpenAI Deep Research to explore specific SEC filings and
+    company information in depth.
+    
+    Args:
+        object_ids: List of object IDs from search results (or single ID string)
+        include_content: Whether to include full filing content (default: False)
+        
+    Returns:
+        Dictionary with detailed information for each object ID
+        
+    Example:
+        fetch(["abc123def456"])
+        fetch(["id1", "id2"], include_content=True)
+    """
+    return deep_research_tools.fetch(object_ids, include_content)
+
+
 @mcp.tool("get_recommended_tools")
 def get_recommended_tools(form_type: str):
     """

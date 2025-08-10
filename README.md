@@ -33,6 +33,26 @@ Using the [Model Context Protocol (MCP)](https://modelcontextprotocol.io/) – a
 
 Once the SEC EDGAR MCP server is running, you can connect to it with any MCP-compatible client (such as an AI assistant or the MCP CLI tool). The client will discover the available EDGAR tools and can invoke them to get real-time data from SEC filings. For example, an AI assistant could use this server to fetch a company's recent filings or query specific financial metrics without manual web searching.
 
+### OpenAI Deep Research Integration
+
+The server includes specialized `search` and `fetch` tools designed for OpenAI Deep Research compatibility:
+
+```python
+# Example configuration for OpenAI integration
+tools=[
+    {
+        "type": "mcp",
+        "server_label": "sec_edgar",
+        "server_url": "http://your-server.onrender.com/mcp/",
+        "require_approval": "never"
+    }
+]
+```
+
+**Deep Research Tools**:
+- **search**: Find SEC filings and companies with top-k results and relevance scoring
+- **fetch**: Retrieve detailed information using object IDs from search results
+
 For comprehensive guides, examples, and tool documentation, visit the [SEC EDGAR MCP Documentation](https://sec-edgar-mcp.amorelli.tech/).
 
 **Demo**: Here's a demonstration of an AI assistant using SEC EDGAR MCP to retrieve Apple's latest filings and financial facts (click to view the video):
@@ -56,13 +76,14 @@ For installation and setup instructions, visit the [SEC EDGAR MCP Quickstart Gui
 
 The SEC EDGAR MCP server acts as a middleman between an AI (MCP client) and the SEC's EDGAR backend:
 
-- 🔸 **MCP Client**: Could be an AI assistant (like [Claude](https://claude.ai/) or other MCP-compatible tools) or any app that speaks the MCP protocol. The client sends JSON-RPC requests to invoke tools and receives JSON results.
+- 🔸 **MCP Client**: Could be an AI assistant (like [Claude](https://claude.ai/), [OpenAI Deep Research](https://openai.com/index/introducing-deep-research/), or other MCP-compatible tools) or any app that speaks the MCP protocol. The client sends JSON-RPC requests to invoke tools and receives JSON results.
 
 - 🔸 **MCP Server (SEC EDGAR MCP)**: This server defines comprehensive EDGAR tools and handles incoming requests. It features:
   - **Company Tools**: CIK lookup, company information, and company facts
   - **Filing Tools**: Recent filings, filing content, 8-K analysis, and section extraction
   - **Financial Tools**: Financial statements with direct XBRL parsing for exact precision
   - **Insider Trading Tools**: Form 3/4/5 analysis with detailed transaction data
+  - **Deep Research Tools**: Search and Fetch tools optimized for OpenAI Deep Research integration
 
 - 🔸 **EDGAR Data Sources**: The server uses the [edgartools Python library](https://github.com/dgunning/edgartools) to access:
   - **SEC EDGAR REST API**: Official SEC endpoint for company data and filing metadata
@@ -74,8 +95,9 @@ The SEC EDGAR MCP server acts as a middleman between an AI (MCP client) and the 
 - **Exact Precision**: Financial data maintains exact numeric precision (no rounding) as filed with the SEC
 - **Filing References**: Every response includes clickable SEC URLs for independent verification
 - **Flexible XBRL Extraction**: Uses pattern matching to find financial concepts without hardcoded mappings
+- **Deep Research Compatibility**: Includes Search and Fetch tools with object ID mapping for OpenAI Deep Research
 
-**How it works**: The MCP client discovers available tools (company lookup, financial statements, insider transactions, etc.). When invoked, each tool fetches data from SEC sources, applies deterministic processing rules, and returns structured JSON with filing references. This ensures AI responses are accurate, verifiable, and based solely on official SEC data.
+**How it works**: The MCP client discovers available tools (company lookup, financial statements, insider transactions, search, fetch, etc.). When invoked, each tool fetches data from SEC sources, applies deterministic processing rules, and returns structured JSON with filing references. This ensures AI responses are accurate, verifiable, and based solely on official SEC data.
 
 ## References 📚
 
